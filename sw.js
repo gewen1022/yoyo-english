@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yoyo-english-v1';
+const CACHE_NAME = 'yoyo-english-v2';
 const ASSETS = [
   './',
   './index.html',
