@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ff6b6b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>佑佑英语打卡</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #faf8f5;
+  color: #2d2a26;
+  min-height: 100vh;
+  padding: 20px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  padding: 24px 0 16px;
+}
+
+.header h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #2d2a26;
+}
+
+.streak-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.streak-num {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.streak-label {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* Calendar mini view */
+.calendar-section {
+  margin: 16px 0;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.calendar-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #666;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #999;
+  position: relative;
+}
+
+.cal-day.has-record {
+  background: #ff6b6b;
+  color: white;
+  font-weight: 600;
+}
+
+.cal-day.today {
+  border: 2px solid #ff6b6b;
+}
+
+.cal-day.future {
+  color: #ddd;
+}
+
+/* Today's check-in card */
+.today-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.today-card h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.today-date {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 16px;
+}
+
+.check-group {
+  margin-bottom: 16px;
+}
+
+.check-group label.group-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: #f9f7f4;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.check-item:active {
+  transform: scale(0.98);
+}
+
+.check-item input[type="checkbox"] {
+  display: none;
+}
+
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.check-item input:checked + .check-box {
+  background: #ff6b6b;
+  border-color: #ff6b6b;
+}
+
+.check-item input:checked + .check-box::after {
+  content: "✓";
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.check-item input:checked ~ .check-text {
+  color: #ff6b6b;
+  font-weight: 500;
+}
+
+.check-text {
+  font-size: 15px;
+  color: #444;
+}
+
+/* Notes section */
+.notes-section {
+  margin-top: 16px;
+}
+
+.notes-section label.group-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notes-input {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 2px solid #f0ede8;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: #faf8f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+.notes-input:focus {
+  outline: none;
+  border-color: #ff6b6b;
+  background: white;
+}
+
+.notes-input::placeholder {
+  color: #ccc;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 16px;
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.save-btn:active {
+  transform: scale(0.98);
+}
+
+.save-btn.saved {
+  background: #4caf50;
+}
+
+/* History */
+.history-section {
+  margin: 24px 0;
+}
+
+.history-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.history-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.history-date {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.history-tag {
+  font-size: 12px;
+  padding: 3px 8px;
+  background: #fff0e6;
+  color: #ff6b6b;
+  border-radius: 20px;
+}
+
+.history-note {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.5;
+  margin-top: 6px;
+  white-space: pre-wrap;
+}
+
+.history-words {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #ccc;
+  font-size: 14px;
+}
+
+/* Data management bar */
+.data-bar {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.data-btn {
+  flex: 1;
+  padding: 10px;
+  background: white;
+  border: 1.5px solid #e8e4df;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.data-btn:active {
+  background: #f5f2ef;
+  transform: scale(0.98);
+}
+
+.data-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+/* Backfill date picker */
+.backfill-section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.backfill-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.backfill-hint {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 12px;
+}
+
+.date-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.date-picker-row label {
+  font-size: 13px;
+  color: #666;
+}
+
+.date-picker-row input[type="date"] {
+  padding: 8px 12px;
+  border: 2px solid #f0ede8;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #faf8f5;
+  color: #333;
+}
+
+.date-picker-row input[type="date"]:focus {
+  outline: none;
+  border-color: #ff6b6b;
+}
+
+/* Stats section */
+.stats-section {
+  margin: 24px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.stat-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ff6b6b;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>佑佑的英语小世界</h1>
+</div>
+
+<div class="streak-bar">
+  <div>
+    <div class="streak-num" id="streakCount">0</div>
+    <div class="streak-label">连续打卡</div>
+  </div>
+</div>
+
+<div class="data-bar">
+  <button class="data-btn" onclick="exportData()">导出备份</button>
+  <button class="data-btn" onclick="document.getElementById('importFile').click()">导入恢复</button>
+  <button class="data-btn" id="backfillBtn" onclick="toggleBackfill()">补录</button>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+
+<div class="stats-section">
+  <div class="stat-card">
+    <div class="stat-num" id="totalDays">0</div>
+    <div class="stat-label">累计天数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" id="totalWords">0</div>
+    <div class="stat-label">记录单词数</div>
+  </div>
+</div>
+
+<div class="calendar-section">
+  <h3>本月记录</h3>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<div class="today-card">
+  <h2>今日打卡</h2>
+  <div class="today-date" id="todayDate"></div>
+
+  <div class="check-group">
+    <label class="group-label">今天做了什么</label>
+    <label class="check-item">
+      <input type="checkbox" value="songs">
+      <span class="check-box"></span>
+      <span class="check-text">英文儿歌 (SSS / 动作歌)</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="daily">
+      <span class="check-box"></span>
+      <span class="check-text">日常场景蹦词</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="book">
+      <span class="check-box"></span>
+      <span class="check-text">英文绘本共读</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="app">
+      <span class="check-box"></span>
+      <span class="check-text">学习 APP / 动画</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="game">
+      <span class="check-box"></span>
+      <span class="check-text">英文互动游戏</span>
+    </label>
+  </div>
+
+  <div class="check-group">
+    <label class="group-label">佑佑的反应</label>
+    <label class="check-item">
+      <input type="checkbox" value="happy">
+      <span class="check-box"></span>
+      <span class="check-text">开心配合</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="neutral">
+      <span class="check-box"></span>
+      <span class="check-text">一般般，没抗拒</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="resist">
+      <span class="check-box"></span>
+      <span class="check-text">不太想参与</span>
+    </label>
+  </div>
+
+  <div class="notes-section">
+    <label class="group-label">今天的新发现 / 简单日记</label>
+    <textarea class="notes-input" id="notesInput" placeholder="比如：今天第一次主动说了 banana！&#10;或者：Walking Walking 跳得很嗨"></textarea>
+  </div>
+
+  <button class="save-btn" id="saveBtn" onclick="saveToday()">保存今天的记录</button>
+</div>
+
+<div class="backfill-section" id="backfillSection" style="display:none">
+  <h2>补录记录</h2>
+  <div class="backfill-hint">在手机上记了但没打卡？选个日期补上</div>
+  <div class="date-picker-row">
+    <label>日期：</label>
+    <input type="date" id="backfillDate" onchange="loadBackfill()">
+  </div>
+
+  <div class="check-group">
+    <label class="group-label">那天做了什么</label>
+    <label class="check-item">
+      <input type="checkbox" value="songs" class="bf-check">
+      <span class="check-box"></span>
+      <span class="check-text">英文儿歌</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="daily" class="bf-check">
+      <span class="check-box"></span>
+      <span class="check-text">日常蹦词</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="book" class="bf-check">
+      <span class="check-box"></span>
+      <span class="check-text">英文绘本</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="app" class="bf-check">
+      <span class="check-box"></span>
+      <span class="check-text">学习APP</span>
+    </label>
+    <label class="check-item">
+      <input type="checkbox" value="game" class="bf-check">
+      <span class="check-box"></span>
+      <span class="check-text">互动游戏</span>
+    </label>
+  </div>
+
+  <div class="notes-section">
+    <label class="group-label">日记</label>
+    <textarea class="notes-input" id="backfillNotes" placeholder="那天发生了什么"></textarea>
+  </div>
+
+  <button class="save-btn" onclick="saveBackfill()">保存补录</button>
+</div>
+
+<div class="history-section">
+  <h3>最近记录</h3>
+  <div id="historyList"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'yoyo-english-tracker';
+
+function getData() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"records":{}}');
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDate(str) {
+  const d = new Date(str + 'T00:00:00');
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  return `${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
+}
+
+// Render today's date
+document.getElementById('todayDate').textContent = formatDate(todayStr());
+
+// Load existing record for today
+function loadToday() {
+  const data = getData();
+  const rec = data.records[todayStr()];
+  if (!rec) return;
+
+  document.querySelectorAll('.check-item input[type="checkbox"]').forEach(cb => {
+    cb.checked = (rec.activities || []).includes(cb.value);
+  });
+  document.getElementById('notesInput').value = rec.notes || '';
+}
+
+// Save today
+function saveToday() {
+  const data = getData();
+  const date = todayStr();
+  const activities = [];
+  document.querySelectorAll('.check-item input[type="checkbox"]:checked').forEach(cb => {
+    activities.push(cb.value);
+  });
+  const notes = document.getElementById('notesInput').value.trim();
+
+  data.records[date] = { activities, notes, savedAt: new Date().toISOString() };
+  saveData(data);
+
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '已保存 ✓';
+  btn.classList.add('saved');
+  setTimeout(() => {
+    btn.textContent = '保存今天的记录';
+    btn.classList.remove('saved');
+  }, 1500);
+
+  renderAll();
+}
+
+// Calculate streak
+function calcStreak(records) {
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const key = d.toISOString().slice(0, 10);
+    if (records[key]) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else if (key === todayStr()) {
+      // Today not saved yet, check from yesterday
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+// Render calendar
+function renderCalendar(records) {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    grid.innerHTML += '<div class="cal-day"></div>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const classes = ['cal-day'];
+    if (records[dateStr]) classes.push('has-record');
+    if (d === today) classes.push('today');
+    if (d > today) classes.push('future');
+    grid.innerHTML += `<div class="${classes.join(' ')}">${d}</div>`;
+  }
+}
+
+// Render history
+function renderHistory(records) {
+  const list = document.getElementById('historyList');
+  const dates = Object.keys(records).sort().reverse().slice(0, 14);
+
+  if (dates.length === 0) {
+    list.innerHTML = '<div class="empty-state">还没有记录，从今天开始吧 ✨</div>';
+    return;
+  }
+
+  const activityLabels = {
+    songs: '英文儿歌', daily: '日常蹦词', book: '英文绘本',
+    app: '学习APP', game: '互动游戏',
+    happy: '开心配合', neutral: '一般般', resist: '不太想'
+  };
+
+  let html = '';
+  for (const date of dates) {
+    const rec = records[date];
+    const tags = (rec.activities || []).map(a => activityLabels[a] || a);
+    const note = rec.notes || '';
+
+    html += `<div class="history-card">
+      <div class="history-date">${formatDate(date)}</div>
+      <div class="history-tags">${tags.map(t => `<span class="history-tag">${t}</span>`).join('')}</div>
+      ${note ? `<div class="history-note">${note}</div>` : ''}
+    </div>`;
+  }
+  list.innerHTML = html;
+}
+
+// Render stats
+function renderStats(records) {
+  const totalDays = Object.keys(records).length;
+  document.getElementById('totalDays').textContent = totalDays;
+  document.getElementById('streakCount').textContent = calcStreak(records);
+
+  // Count unique words from notes
+  let wordCount = 0;
+  const allWords = new Set();
+  Object.values(records).forEach(rec => {
+    if (rec.notes) {
+      // Simple heuristic: count English words in notes
+      const englishWords = rec.notes.match(/[a-zA-Z]+/g);
+      if (englishWords) englishWords.forEach(w => allWords.add(w.toLowerCase()));
+    }
+  });
+  document.getElementById('totalWords').textContent = allWords.size;
+}
+
+// Export data
+function exportData() {
+  const data = getData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '佑佑英语打卡_备份.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Import data
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.records) throw new Error('格式不对');
+      const data = getData();
+      // Merge: imported records override existing ones
+      Object.assign(data.records, imported.records);
+      saveData(data);
+      alert('导入成功！共 ' + Object.keys(data.records).length + ' 条记录');
+      renderAll();
+    } catch (err) {
+      alert('导入失败：文件格式不对');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// Backfill toggle
+let backfillOpen = false;
+function toggleBackfill() {
+  backfillOpen = !backfillOpen;
+  document.getElementById('backfillSection').style.display = backfillOpen ? 'block' : 'none';
+  document.getElementById('backfillBtn').style.color = backfillOpen ? '#ff6b6b' : '#666';
+  if (backfillOpen) {
+    const dateInput = document.getElementById('backfillDate');
+    dateInput.value = todayStr();
+    loadBackfill();
+  }
+}
+
+// Load backfill data for selected date
+function loadBackfill() {
+  const date = document.getElementById('backfillDate').value;
+  const data = getData();
+  const rec = data.records[date];
+  document.querySelectorAll('.bf-check').forEach(cb => {
+    cb.checked = rec ? (rec.activities || []).includes(cb.value) : false;
+  });
+  document.getElementById('backfillNotes').value = rec ? (rec.notes || '') : '';
+}
+
+// Save backfill
+function saveBackfill() {
+  const date = document.getElementById('backfillDate').value;
+  if (!date) { alert('请选日期'); return; }
+  const data = getData();
+  const activities = [];
+  document.querySelectorAll('.bf-check:checked').forEach(cb => activities.push(cb.value));
+  const notes = document.getElementById('backfillNotes').value.trim();
+  data.records[date] = { activities, notes, savedAt: new Date().toISOString() };
+  saveData(data);
+  alert('已补录 ' + date);
+  toggleBackfill();
+  renderAll();
+}
+
+function renderAll() {
+  const data = getData();
+  renderCalendar(data.records);
+  renderHistory(data.records);
+  renderStats(data.records);
+}
+
+// Init
+loadToday();
+renderAll();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+</body>
+</html>
