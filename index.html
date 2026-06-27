@@ -539,6 +539,11 @@ body {
   </div>
 
   <div class="notes-section">
+    <label class="group-label">今天新学的单词（选填）</label>
+    <input class="notes-input" id="wordsInput" placeholder="banana, apple, dog（用逗号分隔）" style="min-height:auto">
+  </div>
+
+  <div class="notes-section">
     <label class="group-label">今天的新发现 / 简单日记</label>
     <textarea class="notes-input" id="notesInput" placeholder="比如：今天第一次主动说了 banana！&#10;或者：Walking Walking 跳得很嗨"></textarea>
   </div>
@@ -581,6 +586,11 @@ body {
       <span class="check-box"></span>
       <span class="check-text">互动游戏</span>
     </label>
+  </div>
+
+  <div class="notes-section">
+    <label class="group-label">新学的单词（选填）</label>
+    <input class="notes-input" id="backfillWords" placeholder="banana, apple（逗号分隔）" style="min-height:auto">
   </div>
 
   <div class="notes-section">
@@ -630,6 +640,7 @@ function loadToday() {
     cb.checked = (rec.activities || []).includes(cb.value);
   });
   document.getElementById('notesInput').value = rec.notes || '';
+  document.getElementById('wordsInput').value = (rec.words || []).join(', ');
 }
 
 // Save today
@@ -641,8 +652,10 @@ function saveToday() {
     activities.push(cb.value);
   });
   const notes = document.getElementById('notesInput').value.trim();
+  const wordsStr = document.getElementById('wordsInput').value.trim();
+  const words = wordsStr ? wordsStr.split(/[,，\s]+/).map(w => w.trim().toLowerCase()).filter(Boolean) : [];
 
-  data.records[date] = { activities, notes, savedAt: new Date().toISOString() };
+  data.records[date] = { activities, notes, words, savedAt: new Date().toISOString() };
   saveData(data);
 
   const btn = document.getElementById('saveBtn');
@@ -729,6 +742,7 @@ function renderHistory(records) {
         <button class="history-del" onclick="deleteRecord('${date}')">✕</button>
       </div>
       <div class="history-tags">${tags.map(t => `<span class="history-tag">${t}</span>`).join('')}</div>
+      ${rec.words && rec.words.length ? `<div class="history-words">新词: ${rec.words.join(', ')}</div>` : ''}
       ${note ? `<div class="history-note">${note}</div>` : ''}
     </div>`;
   }
@@ -750,15 +764,10 @@ function renderStats(records) {
   document.getElementById('totalDays').textContent = totalDays;
   document.getElementById('streakCount').textContent = calcStreak(records);
 
-  // Count unique words from notes
-  let wordCount = 0;
+  // Count unique words
   const allWords = new Set();
   Object.values(records).forEach(rec => {
-    if (rec.notes) {
-      // Simple heuristic: count English words in notes
-      const englishWords = rec.notes.match(/[a-zA-Z]+/g);
-      if (englishWords) englishWords.forEach(w => allWords.add(w.toLowerCase()));
-    }
+    if (rec.words) rec.words.forEach(w => allWords.add(w));
   });
   document.getElementById('totalWords').textContent = allWords.size;
 }
@@ -820,6 +829,7 @@ function loadBackfill() {
     cb.checked = rec ? (rec.activities || []).includes(cb.value) : false;
   });
   document.getElementById('backfillNotes').value = rec ? (rec.notes || '') : '';
+  document.getElementById('backfillWords').value = rec ? (rec.words || []).join(', ') : '';
 }
 
 // Save backfill
@@ -830,7 +840,9 @@ function saveBackfill() {
   const activities = [];
   document.querySelectorAll('.bf-check:checked').forEach(cb => activities.push(cb.value));
   const notes = document.getElementById('backfillNotes').value.trim();
-  data.records[date] = { activities, notes, savedAt: new Date().toISOString() };
+  const wordsStr = document.getElementById('backfillWords').value.trim();
+  const words = wordsStr ? wordsStr.split(/[,，\s]+/).map(w => w.trim().toLowerCase()).filter(Boolean) : [];
+  data.records[date] = { activities, notes, words, savedAt: new Date().toISOString() };
   saveData(data);
   alert('已补录 ' + date);
   toggleBackfill();
